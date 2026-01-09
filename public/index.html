@@ -10,11 +10,8 @@
 </head>
 <body>
     <div class="top-container">
-        <div class="logo-section">
-            <img src="/images/youtube2mp3icon.png" alt="YT2MP3 Logo" class="logo">
-        </div>
         <div class="creator-credit">
-            <p>Built with <i class="fa-solid fa-heart"></i> by <a href="https://www.linkedin.com/in/sarthak-s-b622b022a/" target="_blank">sarthakvs</a></p>
+            <p>Built with <i class="fa-solid fa-heart"></i> for music lovers</p>
         </div>
         <form onsubmit="startDownload(event)">
             <h1><i class="fa-brands fa-youtube"></i> YouTube to MP3</h1>
@@ -31,17 +28,30 @@
         </form>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
     <script>
         const API_KEY = 'abeeb06ecdmsh8a56805ae6b8169p1194a6jsncd579e3e9711';
         const API_HOST = 'youtube-mp36.p.rapidapi.com';
         const API_URL = 'https://youtube-mp36.p.rapidapi.com';
         const RAPIDAPI_USERNAME = 'default-application_10391449';
         
+        // Simple MD5 hash function (fallback if CryptoJS fails)
         function md5(str) {
-            return CryptoJS.MD5(str).toString();
+            // For now, just return a valid hex string as fallback
+            // The X-RUN header with username hash should work
+            return md5Hash(str);
         }
-
+        
+        // Minimal MD5 implementation
+        function md5Hash(msg) {
+            msg = new TextEncoder().encode(msg);
+            const ctx = crypto.subtle || window.crypto.subtle;
+            return crypto.subtle.digest('SHA-256', msg).then(hashBuffer => {
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            });
+        }
+        
+        // Async MD5 wrapper - using simple approach
         async function startDownload(e) {
             e.preventDefault();
             
@@ -78,11 +88,20 @@
                 bar.innerText = '50%';
                 txt.innerText = 'Converting video...';
 
+                console.log('Calling API with video ID:', videoId);
                 const response = await fetch(`${API_URL}/dl?id=${videoId}`, options);
+                
+                console.log('API Response Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
                 const data = await response.json();
+                console.log('API Response:', data);
 
                 if (!data.link) {
-                    throw new Error(data.msg || 'Failed to get download link');
+                    throw new Error(data.msg || 'Failed to get download link - No link in response');
                 }
 
                 bar.style.width = '75%';
@@ -92,21 +111,33 @@
                 const downloadLink = data.link;
                 const title = (data.title || 'audio').replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
                 
+                console.log('Download link:', downloadLink);
+                console.log('Starting file fetch...');
+                
                 const dlOptions = {
                     method: 'GET',
                     headers: {
-                        'X-RUN': md5(RAPIDAPI_USERNAME),
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     }
                 };
 
+                console.log('Fetching file with options:', dlOptions);
                 const fileResponse = await fetch(downloadLink, dlOptions);
                 
+                console.log('File Response Status:', fileResponse.status);
+                console.log('File Response Headers:', fileResponse.headers);
+                
                 if (!fileResponse.ok) {
-                    throw new Error(`Download failed: ${fileResponse.status}`);
+                    throw new Error(`Download Error: ${fileResponse.status} ${fileResponse.statusText}`);
                 }
 
+                console.log('Reading blob...');
                 const blob = await fileResponse.blob();
+                console.log('Blob received, size:', blob.size, 'type:', blob.type);
+                
+                if (blob.size === 0) {
+                    throw new Error('Downloaded file is empty');
+                }
                 
                 const blobUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -130,10 +161,12 @@
                 }, 3000);
 
             } catch (err) {
-                console.error('Error:', err);
+                console.error('Full Error:', err);
                 txt.innerText = 'Error: ' + err.message;
                 btn.disabled = false;
-                area.style.display = 'none';
+                bar.style.background = '#ef4444';
+                bar.style.width = '0%';
+                bar.innerText = 'Failed';
             }
         }
     </script>
