@@ -40,7 +40,7 @@
 
     <!-- HIDDEN FORM FOR DOWNLOADING (Magic happens here) -->
     <form id="hidden-dl-form" action="/api/stream" method="POST" style="display: none;">
-        <input type="hidden" name="downloadUrl" id="hiddenUrl">
+        <input type="hidden" name="videoId" id="hiddenUrl">
         <input type="hidden" name="title" id="hiddenTitle">
     </form>
     <script>
@@ -92,7 +92,8 @@
                         bar.innerText = '100%';
 
                         // 4. TRIGGER INSTANT DOWNLOAD VIA HIDDEN FORM
-                        document.getElementById('hiddenUrl').value = pollData.downloadUrl;
+                        // Pass videoId to fetch fresh link at stream time
+                        document.getElementById('hiddenUrl').value = startData.pid;
                         document.getElementById('hiddenTitle').value = startData.title;
                         document.getElementById('hidden-dl-form').submit();
 

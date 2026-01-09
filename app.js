@@ -113,12 +113,16 @@ app.get('/api/status', async (req, res) => {
 
 // --- STEP 3: STREAM FILE ---
 app.post('/api/stream', async (req, res) => {
-    const { downloadUrl, title } = req.body;
+    const { videoId, title } = req.body;
     try {
+        // Fetch FRESH download link at stream time to avoid expiration
+        console.log('Fetching fresh download link for:', videoId);
+        const response = await fetchWithRotation(videoId);
+        const downloadUrl = response.data.link;
         console.log('Streaming from:', downloadUrl);
         
         // Make request to download the MP3 with proper headers
-        const response = await axios({ 
+        const streamResponse = await axios({ 
             method: 'GET', 
             url: downloadUrl, 
             responseType: 'stream',
@@ -138,7 +142,7 @@ app.post('/api/stream', async (req, res) => {
         
         console.log('Starting download with title:', safeTitle);
         
-        response.data.on('error', (err) => {
+        streamResponse.data.on('error', (err) => {
             console.error('Stream error:', err);
             if (!res.headersSent) {
                 res.status(500).send('Error downloading file');
@@ -149,7 +153,7 @@ app.post('/api/stream', async (req, res) => {
             console.error('Response error:', err);
         });
         
-        response.data.pipe(res);
+        streamResponse.data.pipe(res);
     } catch (e) { 
         console.error('Stream error:', e.message);
         if (!res.headersSent) {
