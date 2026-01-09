@@ -118,8 +118,11 @@ app.post('/api/stream', async (req, res) => {
         // Fetch FRESH download link at stream time to avoid expiration
         console.log('Fetching fresh download link for:', videoId);
         const response = await fetchWithRotation(videoId);
-        const downloadUrl = response.data.link;
-        console.log('Streaming from:', downloadUrl);
+        let downloadUrl = response.data.link;
+        
+        // Use CORS proxy to bypass IP blocks
+        downloadUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(downloadUrl)}`;
+        console.log('Streaming from (via proxy):', downloadUrl);
         
         // Make request to download the MP3 with enhanced headers to bypass IP blocks
         const streamResponse = await axios({ 
