@@ -5,6 +5,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 app.set('view engine', 'ejs');
 app.use(express.static("public"));
