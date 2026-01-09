@@ -1,11 +1,17 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// Generate X-RUN header (MD5 hash of RapidAPI username)
+const rapidApiUsername = process.env.RAPIDAPI_USERNAME || 'default-application_10391449';
+const xRunHeader = crypto.createHash('md5').update(rapidApiUsername).digest('hex');
+console.log('X-RUN Header:', xRunHeader);
 
 app.set('view engine', 'ejs');
 app.use(express.static("public"));
@@ -118,32 +124,22 @@ app.post('/api/stream', async (req, res) => {
         // Fetch FRESH download link at stream time to avoid expiration
         console.log('Fetching fresh download link for:', videoId);
         const response = await fetchWithRotation(videoId);
-        let downloadUrl = response.data.link;
+        const downloadUrl = response.data.link;
+        console.log('Streaming from:', downloadUrl);
         
-        // Use more reliable CORS proxy to bypass IP blocks
-        downloadUrl = `https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`;
-        console.log('Streaming from (via corsproxy):', downloadUrl);
-        
-        // Make request to download the MP3 with enhanced headers to bypass IP blocks
+        // Stream through Render server with whitelisting headers
         const streamResponse = await axios({ 
             method: 'GET', 
             url: downloadUrl, 
             responseType: 'stream',
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'X-RUN': xRunHeader,
                 'Accept': 'audio/mpeg, */*;q=0.9',
                 'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache',
                 'Referer': 'https://www.youtube.com/',
-                'Origin': 'https://www.youtube.com',
-                'Sec-Fetch-Dest': 'audio',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'cross-site'
             },
-            maxRedirects: 10,
+            maxRedirects: 15,
             timeout: 60000
         });
         
