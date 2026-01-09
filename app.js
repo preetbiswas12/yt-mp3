@@ -73,8 +73,11 @@ app.post('/api/start', async (req, res) => {
         const downloadLink = response.data.link;
         const title = response.data.title || 'audio';
         
-        // Store the download info for polling
-        downloadMap.set(videoId, { downloadUrl: downloadLink, title: title });
+        // Store the download info for polling with timestamp
+        downloadMap.set(videoId, { downloadUrl: downloadLink, title: title, timestamp: Date.now() });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => downloadMap.delete(videoId), 5 * 60 * 1000);
         
         console.log({videoId, title, downloadLink});
         res.json({ 
