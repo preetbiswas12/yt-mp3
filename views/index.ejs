@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.cdnfonts.com/css/times-new-roman" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" href="/images/youtube2mp3icon.png" type="image/x-icon">
-    <title>YT2MP3 Magic</title>
+    <title>YT2MP3 Converter</title>
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9VYKQ8W52L"></script>
@@ -20,14 +19,16 @@
 </script>
 <body>
     <div class="top-container">
-        <!-- Note: onsubmit handles the logic -->
         <div class="creator-credit">
-                <p>Made by <a href="https://www.linkedin.com/in/sarthak-s-b622b022a/" target="_blank">sarthakvs <i class="fa-brands fa-linkedin"></i></a></p>
+            <p>Built with <i class="fa-solid fa-heart"></i> for Music lovers</p>
         </div>
         <form onsubmit="startProcess(event)">
-            <h1>Youtube to MP3</h1>
-            <input type="text" id="urlInput" placeholder="Paste Link Here" required>
-            <button type="submit" id="dlBtn">Download</button>
+            <h1><i class="fa-brands fa-youtube"></i> YouTube to MP3</h1>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 15px; font-size: 0.95rem;">Convert your favorite videos in seconds</p>
+            <input type="text" id="urlInput" placeholder="Paste YouTube link here..." required>
+            <button type="submit" id="dlBtn">
+                <i class="fa-solid fa-download"></i> Download
+            </button>
             
             <div id="progress-area">
                 <div class="bar-bg"><div class="bar-fg" id="bar">0%</div></div>
@@ -85,8 +86,10 @@
                     // If progress is 1000 OR downloadUrl exists
                     if (pollData.downloadUrl) {
                         clearInterval(interval);
-                        txt.innerText = "Done! Downloading...";
-                        bar.style.background = "#2196F3"; // Blue
+                        txt.innerText = "Done! Starting download...";
+                        bar.style.background = "#10B981"; // Green
+                        bar.style.width = '100%';
+                        bar.innerText = '100%';
 
                         // 4. TRIGGER INSTANT DOWNLOAD VIA HIDDEN FORM
                         document.getElementById('hiddenUrl').value = pollData.downloadUrl;
@@ -94,9 +97,14 @@
                         document.getElementById('hidden-dl-form').submit();
 
                         // Reset button shortly after
-                        setTimeout(() => { btn.disabled = false; btn.innerText = "Download Again"; }, 3000);
+                        setTimeout(() => { 
+                            btn.disabled = false; 
+                            btn.innerHTML = '<i class="fa-solid fa-download"></i> Download Again';
+                            area.style.display = 'none';
+                            document.getElementById('urlInput').value = '';
+                        }, 3000);
                     }
-                }, 6000); // Check every 6 second
+                }, 2000); // Check every 2 seconds
 
             } catch (err) {
                 console.error(err);
