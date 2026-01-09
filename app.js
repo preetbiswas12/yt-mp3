@@ -120,9 +120,9 @@ app.post('/api/stream', async (req, res) => {
         const response = await fetchWithRotation(videoId);
         let downloadUrl = response.data.link;
         
-        // Use CORS proxy to bypass IP blocks
-        downloadUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(downloadUrl)}`;
-        console.log('Streaming from (via proxy):', downloadUrl);
+        // Use more reliable CORS proxy to bypass IP blocks
+        downloadUrl = `https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`;
+        console.log('Streaming from (via corsproxy):', downloadUrl);
         
         // Make request to download the MP3 with enhanced headers to bypass IP blocks
         const streamResponse = await axios({ 
