@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/images/youtube2mp3icon.png" type="image/x-icon">
+    <title>YT2MP3 Converter</title>
+</head>
+<body>
+    <div class="top-container">
+        <div class="creator-credit">
+            <p>Built with <i class="fa-solid fa-heart"></i> by <a href="https://www.linkedin.com/in/sarthak-s-b622b022a/" target="_blank">sarthakvs</a></p>
+        </div>
+        <form onsubmit="startDownload(event)">
+            <h1><i class="fa-brands fa-youtube"></i> YouTube to MP3</h1>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 15px; font-size: 0.95rem;">Convert your favorite videos in seconds</p>
+            <input type="text" id="urlInput" placeholder="Paste YouTube link here..." required>
+            <button type="submit" id="dlBtn">
+                <i class="fa-solid fa-download"></i> Download
+            </button>
+            
+            <div id="progress-area">
+                <div class="bar-bg"><div class="bar-fg" id="bar">0%</div></div>
+                <p id="status-txt">Starting...</p>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+    <script>
+        const API_KEY = 'abeeb06ecdmsh8a56805ae6b8169p1194a6jsncd579e3e9711';
+        const API_HOST = 'youtube-mp36.p.rapidapi.com';
+        const API_URL = 'https://youtube-mp36.p.rapidapi.com';
+        const RAPIDAPI_USERNAME = 'default-application_10391449';
+        
+        function md5(str) {
+            return CryptoJS.MD5(str).toString();
+        }
+
+        async function startDownload(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('urlInput').value;
+            const btn = document.getElementById('dlBtn');
+            const area = document.getElementById('progress-area');
+            const bar = document.getElementById('bar');
+            const txt = document.getElementById('status-txt');
+
+            const videoIdMatch = url.match(/(?:v=|\/|youtu\.be\/)([0-9A-Za-z_-]{11})/);
+            if (!videoIdMatch) {
+                txt.innerText = 'Invalid YouTube URL';
+                return;
+            }
+            
+            const videoId = videoIdMatch[1];
+            
+            btn.disabled = true;
+            area.style.display = 'block';
+            bar.style.width = '20%';
+            bar.innerText = '20%';
+            txt.innerText = 'Fetching video info...';
+
+            try {
+                const options = {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-key': API_KEY,
+                        'x-rapidapi-host': API_HOST
+                    }
+                };
+
+                bar.style.width = '50%';
+                bar.innerText = '50%';
+                txt.innerText = 'Converting video...';
+
+                const response = await fetch(`${API_URL}/dl?id=${videoId}`, options);
+                const data = await response.json();
+
+                if (!data.link) {
+                    throw new Error(data.msg || 'Failed to get download link');
+                }
+
+                bar.style.width = '75%';
+                bar.innerText = '75%';
+                txt.innerText = 'Preparing download...';
+
+                const downloadLink = data.link;
+                const title = (data.title || 'audio').replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
+                
+                const dlOptions = {
+                    method: 'GET',
+                    headers: {
+                        'X-RUN': md5(RAPIDAPI_USERNAME),
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                };
+
+                const fileResponse = await fetch(downloadLink, dlOptions);
+                
+                if (!fileResponse.ok) {
+                    throw new Error(`Download failed: ${fileResponse.status}`);
+                }
+
+                const blob = await fileResponse.blob();
+                
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `${title}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+
+                bar.style.background = '#10B981';
+                bar.style.width = '100%';
+                bar.innerText = '100%';
+                txt.innerText = 'Done! Check your downloads folder.';
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-download"></i> Download Again';
+                    area.style.display = 'none';
+                    document.getElementById('urlInput').value = '';
+                }, 3000);
+
+            } catch (err) {
+                console.error('Error:', err);
+                txt.innerText = 'Error: ' + err.message;
+                btn.disabled = false;
+                area.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
